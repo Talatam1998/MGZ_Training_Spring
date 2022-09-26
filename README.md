@@ -1,2 +1,2 @@
-Sử dụng Spring Jpa, Jwt, Flyway
-Chức năng: CRUD
+Sử dụng Spring Jpa, Jwt, Flyway.
+Chức năng: CRUD, Authentication .
