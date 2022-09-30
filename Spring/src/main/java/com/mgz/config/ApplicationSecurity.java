@@ -12,6 +12,7 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -47,38 +48,12 @@ public class ApplicationSecurity   {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http.csrf().disable();
-        http.authorizeRequests().anyRequest().permitAll();
+//        http.authorizeRequests().anyRequest().permitAll();
         http.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);
-//        http.authorizeRequests()
-//                .antMatchers("/auth/login", "/docs/**", "/users","/swagger-ui.html").permitAll()
-//                .anyRequest().authenticated();
-
-//        http.authorizeRequests().anyRequest().authenticated().and().formLogin().permitAll();
-
-//        http.authorizeRequests().anyRequest().authenticated()
-//                .and().formLogin().permitAll()
-//                .usernameParameter("email").passwordParameter("password")
-//                .and().logout().permitAll()
-//                .and().exceptionHandling().accessDeniedPage("/403");
-
-//        http.authorizeRequests().anyRequest().authenticated().and().formLogin()
-//                .usernameParameter("email")
-//                .permitAll()
-//                .successHandler(new AuthenticationSuccessHandler() {
-//
-//                    @Override
-//                    public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
-//                                                        Authentication authentication) throws IOException, ServletException {
-//                        // run custom logics upon successful login
-//
-//                        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-//                        String username = userDetails.getUsername();
-//
-//                        System.out.println("The user " + username + " has logged in.");
-//
-//                        response.sendRedirect(request.getContextPath());
-//                    }
-//                });
+        http.authorizeRequests()
+                .antMatchers("/auth/login", "/docs/**", "/users","/swagger-ui/index.html/**").permitAll()
+                .anyRequest().authenticated();
+        
                 http.addFilterBefore(jwtTokenFilter, UsernamePasswordAuthenticationFilter.class);
                 http.exceptionHandling()
                 .authenticationEntryPoint(
@@ -91,7 +66,16 @@ public class ApplicationSecurity   {
                 );
         return http.build();
     }
-
+    @Bean
+    public WebSecurityCustomizer webSecurityCustomizer() {
+        return (web) -> web.ignoring()
+                .antMatchers("/api/auth/**")
+                .antMatchers("/v3/api-docs/**")
+                .antMatchers("configuration/**")
+                .antMatchers("/swagger*/**")
+                .antMatchers("/webjars/**")
+                .antMatchers("/swagger-ui/**");
+    }
     @Bean
     public UserDetailsService userDetailsService(){
         return new UserDetailsService() {
