@@ -53,7 +53,7 @@ public class ApplicationSecurity   {
         http.authorizeRequests()
                 .antMatchers("/auth/login", "/docs/**", "/users","/swagger-ui/index.html/**").permitAll()
                 .anyRequest().authenticated();
-        
+
                 http.addFilterBefore(jwtTokenFilter, UsernamePasswordAuthenticationFilter.class);
                 http.exceptionHandling()
                 .authenticationEntryPoint(
