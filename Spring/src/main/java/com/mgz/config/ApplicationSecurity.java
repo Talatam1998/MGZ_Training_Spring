@@ -7,22 +7,34 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.authentication.configuration.EnableGlobalAuthentication;
+import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 
 @EnableWebSecurity
 @Configuration
+@EnableGlobalMethodSecurity(
+        prePostEnabled = false,
+        securedEnabled = false,
+        jsr250Enabled = true
+)
 public class ApplicationSecurity   {
 
     @Autowired
@@ -30,16 +42,45 @@ public class ApplicationSecurity   {
     @Autowired
     private JwtTokenFilter jwtTokenFilter;
 
+//    @Autowired private LoginSuccessHandler loginSuccessHandler;
+
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http.csrf().disable();
-//        http.authorizeRequests().anyRequest().permitAll();
+        http.authorizeRequests().anyRequest().permitAll();
         http.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);
-        http.authorizeRequests()
-                .antMatchers("/auth/login", "/docs/**", "/users","/swagger-ui.html#/").permitAll()
-                .anyRequest().authenticated();
+//        http.authorizeRequests()
+//                .antMatchers("/auth/login", "/docs/**", "/users","/swagger-ui.html").permitAll()
+//                .anyRequest().authenticated();
 
-        http.exceptionHandling()
+//        http.authorizeRequests().anyRequest().authenticated().and().formLogin().permitAll();
+
+//        http.authorizeRequests().anyRequest().authenticated()
+//                .and().formLogin().permitAll()
+//                .usernameParameter("email").passwordParameter("password")
+//                .and().logout().permitAll()
+//                .and().exceptionHandling().accessDeniedPage("/403");
+
+//        http.authorizeRequests().anyRequest().authenticated().and().formLogin()
+//                .usernameParameter("email")
+//                .permitAll()
+//                .successHandler(new AuthenticationSuccessHandler() {
+//
+//                    @Override
+//                    public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
+//                                                        Authentication authentication) throws IOException, ServletException {
+//                        // run custom logics upon successful login
+//
+//                        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+//                        String username = userDetails.getUsername();
+//
+//                        System.out.println("The user " + username + " has logged in.");
+//
+//                        response.sendRedirect(request.getContextPath());
+//                    }
+//                });
+                http.addFilterBefore(jwtTokenFilter, UsernamePasswordAuthenticationFilter.class);
+                http.exceptionHandling()
                 .authenticationEntryPoint(
                         (request, response, ex) -> {
                             response.sendError(
@@ -48,9 +89,6 @@ public class ApplicationSecurity   {
                             );
                         }
                 );
-
-        http.addFilterBefore(jwtTokenFilter, UsernamePasswordAuthenticationFilter.class);
-
         return http.build();
     }
 

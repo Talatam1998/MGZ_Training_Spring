@@ -1,6 +1,8 @@
 package com.mgz.jwt;
 
+import com.mgz.model.Role;
 import com.mgz.model.User;
+import io.jsonwebtoken.Claims;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -47,7 +49,6 @@ public class JwtTokenFilter extends OncePerRequestFilter {
         if (ObjectUtils.isEmpty(header) || !header.startsWith("Bearer")) {
             return false;
         }
-
         return true;
     }
 
@@ -61,7 +62,7 @@ public class JwtTokenFilter extends OncePerRequestFilter {
         UserDetails userDetails = getUserDetails(token);
 
         UsernamePasswordAuthenticationToken
-                authentication = new UsernamePasswordAuthenticationToken(userDetails, null, null);
+                authentication = new UsernamePasswordAuthenticationToken(userDetails, null,userDetails.getAuthorities());
 
         authentication.setDetails(
                 new WebAuthenticationDetailsSource().buildDetails(request));
@@ -71,9 +72,19 @@ public class JwtTokenFilter extends OncePerRequestFilter {
 
     private UserDetails getUserDetails(String token) {
         User userDetails = new User();
+        Claims claims = jwtTokenUtil.parseClaims(token);
+        String claimRoles = (String) claims.get("roles");
+//        System.out.println("claimRoles"+claimRoles);
+        claimRoles = claimRoles.replace("[","").replace("]","");
+        String[] roleNames = claimRoles.split(",");
+        for(String aRoleName : roleNames){
+            userDetails.addRole(new Role(aRoleName));
+        }
+
         String[] jwtSubject = jwtTokenUtil.getSubject(token).split(",");
 
-        userDetails.setId(Long.parseLong(jwtSubject[0]));
+
+        userDetails.setId(Integer.parseInt(jwtSubject[0]));
         userDetails.setEmail(jwtSubject[1]);
 
         return userDetails;
